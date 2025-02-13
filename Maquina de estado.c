@@ -189,5 +189,4 @@ int Func_ESTADO_DESCONOCIDO(void) {
         if (config.FDESCONOCIDO == FDESCONOCIDO_CIERRA) return ESTADO_CERRANDO;
         if (config.FDESCONOCIDO == FDESCONOCIDO_ABRIR) return ESTADO_ABRIENDO;
     }
-    // prueba de funcionamiento de guardado.
 }
