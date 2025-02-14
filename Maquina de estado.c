@@ -96,6 +96,8 @@ struct SYSTEM_CONFIG {
 
 int main () 
 {
+    printf("Iniciando Maquina de estado.\n");
+
     if(ESTADO_ACTUAL == ESTADO_INICIAL)
     {
         ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
@@ -128,6 +130,8 @@ int main ()
     {
         ESTADO_SIGUIENTE = Func_ESTADO_DESCONOCIDO();
     }
+
+    printf("Terminando Maquina de estado.\n");
 
 }
 int Func_ESTADO_INICIAL(void)
@@ -204,7 +208,7 @@ int Func_ESTADO_ABIERTO(void)
     for(;;)
     {
          //si la puerta esta abierta basta con precionar el boton de cerrar en la llave y el pp para Cerrar el porton.       
-        if (config.cnt_TCA >= TIME_CA)
+        if (config.cntTCA >= TIME_CA)
         {
             return ESTADO_CERRANDO;      
         }
