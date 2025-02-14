@@ -6,26 +6,27 @@
 #define ESTADO_ERROR 1
 #define ESTADO_ABRIENDO 2
 #define ESTADO_CERRANDO 3
-#define ESTADO_ABIERTA 4
-#define ESTADO_CERRADA 5
+#define ESTADO_ABIERTO 4
+#define ESTADO_CERRADO 5
 #define ESTADO_DETENIDA 6
 #define ESTADO_DESCONOCIDO 7
 
 // Definición de valores para sensores y actuadores
 #define LM_ACTIVO 1
-#define LM_INACTIVO 0
+#define LM_NOACTIVO 0
 #define PP_ACTIVO 1
 #define PP_INACTIVO 0
 #define FTC_ACTIVO 1
 #define FTC_INACTIVO 0
 #define KEY_ACTIVO 1
-#define KEY_INACTIVO 0
+#define KEY_NOACTIVO 0
 #define MOTOR_ON 1
 #define MOTOR_OFF 0
 #define LAMP_ON 1
 #define LAMP_OFF 0
 #define BUZZER_ON 1
 #define BUZZER_OFF 0
+#define TIME_CA 120
 
 // Definición de opciones para estados desconocidos y detenidos
 #define FDESCONOCIDO_CIERRA 0
@@ -35,20 +36,38 @@
 #define FDETENIDA_SEGUIR 0
 #define FDETENIDA_CONTRARIO 1
 
-// Prototipos de funciones para manejar los estados de la puerta
-int Func_ESTADO_INICIAL(void);
-int Func_ESTADO_ERROR(void);
-int Func_ESTADO_ABRIENDO(void);
-int Func_ESTADO_CERRANDO(void);
-int Func_ESTADO_ABIERTA(void);
-int Func_ESTADO_CERRADA(void);
-int Func_ESTADO_DETENIDA(void);
-int Func_ESTADO_DESCONOCIDO(void);
 
-// Variables globales que manejan la transición de estados
+
+/* typedef enum
+{
+    ESTADO_INICIAL,
+    ESTADO_ERROR,
+    ESTADO_ABRIENDO,
+    ESTADO_CERRANDO,
+    ESTADO_ABIERTO,
+    ESTADO_CERRADO,
+    ESTADO_FINAL
+} Estado;
+*/
+
 int ESTADO_SIGUIENTE = ESTADO_INICIAL;
 int ESTADO_ANTERIOR = ESTADO_INICIAL;
 int ESTADO_ACTUAL = ESTADO_INICIAL;
+
+/*dip swich_fd (dpsw_fd)
+1-1 de desconocido a cerrar.
+1-0 de desconocido a esperar comando.
+0-1 de desconocido a abrir.
+0-0 de deconocido a parpadear.
+
+dpsw_fpp
+
+0 - seguir en el estado antes de detener
+1 - estado contrario de donde estaba antes
+
+si estaba cerrando entonces empieza a abrir.
+
+*/
 
 // Estructura que almacena los estados de los sensores y actuadores
 struct SYSTEM_IO {
@@ -68,116 +87,174 @@ struct SYSTEM_IO {
 
 // Estructura de configuración del sistema
 struct SYSTEM_CONFIG {
-    unsigned int cnt_TCA; // Tiempo de cierre automático en segundos
-    unsigned int cnt_RT; // Tiempo máximo de movimiento del motor en segundos
+    unsigned int cntTCA; // Tiempo de cierre automático en segundos
+    unsigned int cntRT; // Tiempo máximo de movimiento del motor en segundos
     int FDESCONOCIDO; // Configuración del estado desconocido
     int FDETENIDA; // Configuración del estado detenido
 } config;
 
-int main() {
-    for(;;) {
-        // Evaluación de estados y ejecución de la función correspondiente
-        if(ESTADO_SIGUIENTE == ESTADO_INICIAL) {
-            ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_ERROR) {
-            ESTADO_SIGUIENTE = Func_ESTADO_ERROR();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_ABRIENDO) {
-            ESTADO_SIGUIENTE = Func_ESTADO_ABRIENDO();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_CERRANDO) {
-            ESTADO_SIGUIENTE = Func_ESTADO_CERRANDO();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_ABIERTA) {
-            ESTADO_SIGUIENTE = Func_ESTADO_ABIERTA();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_CERRADA) {
-            ESTADO_SIGUIENTE = Func_ESTADO_CERRADA();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_DETENIDA) {
-            ESTADO_SIGUIENTE = Func_ESTADO_DETENIDA();
-        }
-        if(ESTADO_SIGUIENTE == ESTADO_DESCONOCIDO) {
-            ESTADO_SIGUIENTE = Func_ESTADO_DESCONOCIDO();
-        }
-    }
-    return 0;
-}
 
-// Función que gestiona el estado inicial del sistema
-int Func_ESTADO_INICIAL(void) {
-    ESTADO_ANTERIOR = ESTADO_ACTUAL;
-    ESTADO_ACTUAL = ESTADO_INICIAL;
-    
-    // Se apagan todos los actuadores
-    io.ma = MOTOR_OFF;
-    io.mc = MOTOR_OFF;
-    io.lamp = LAMP_OFF;
-    io.buzzer = BUZZER_OFF;
-    
-    // Determina el siguiente estado en base a los sensores
-    for(;;) {
-        if(io.lsc == LM_ACTIVO && io.lsa == LM_ACTIVO) {
-            return ESTADO_ERROR; // Error si ambos sensores están activos
-        }
-        if(io.lsc == LM_INACTIVO && io.lsa == LM_ACTIVO) {
-            return ESTADO_ABIERTA; // Puerta detectada como abierta
-        }
-        if(io.lsc == LM_ACTIVO && io.lsa == LM_INACTIVO) {
-            return ESTADO_CERRADA; // Puerta detectada como cerrada
-        }
-        if(io.lsc == LM_INACTIVO && io.lsa == LM_INACTIVO) {
-            return ESTADO_DESCONOCIDO; // No se puede determinar el estado
-        }
+int main () 
+{
+    if(ESTADO_ACTUAL == ESTADO_INICIAL)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
     }
-}
+    if(ESTADO_ACTUAL == ESTADO_ERROR)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_ERROR();
+    }
+    if(ESTADO_ACTUAL == ESTADO_ABRIENDO)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_ABRIENDO();
+    }
+    if(ESTADO_ACTUAL == ESTADO_ABIERTO)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_ABIERTO();
+    }
+    if(ESTADO_ACTUAL == ESTADO_CERRANDO)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_CERRANDO();
+    }
+    if(ESTADO_ACTUAL == ESTADO_CERRADO)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_CERRADO();
+    }
+    if(ESTADO_ACTUAL == ESTADO_DETENIDA)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_DETENIDA();
+    }
+    if(ESTADO_ACTUAL == ESTADO_DESCONOCIDO)
+    {
+        ESTADO_SIGUIENTE = Func_ESTADO_DESCONOCIDO();
+    }
 
-// Función que maneja el estado de error
-int Func_ESTADO_ERROR(void) {
+}
+int Func_ESTADO_INICIAL(void)
+{ 
+    //inicializacion de estado.
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
-    ESTADO_ACTUAL = ESTADO_ERROR;
-    
-    // Desactivar motores, encender alarma
+    ESTADO_ACTUAL = ESTADO_INICIAL; 
+    //inicializacion de estado.
     io.ma = MOTOR_OFF;
     io.mc = MOTOR_OFF;
     io.lamp = LAMP_OFF;
     io.buzzer = BUZZER_ON;
+
+    //ciclo de estado
+    for(;;)
+    {
+        //detectar error en limit SW.
+        if (io.lsa== LM_ACTIVO && io.lsc == LM_ACTIVO)
+        {
+            return ESTADO_ERROR;
+        }
+        if (io.lsa== LM_ACTIVO && io.lsc == LM_NOACTIVO)
+        {
+            return ESTADO_ABIERTO;
+        }
+        if (io.lsa== LM_NOACTIVO && io.lsc == LM_ACTIVO)
+        {
+            return ESTADO_CERRADO;
+        }
+        if (io.lsa== LM_NOACTIVO && io.lsc == LM_NOACTIVO)
+        {
+            return ESTADO_DESCONOCIDO;
+        }
+
+        
+    }
+}
+int Func_ESTADO_ERROR(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_ERROR; 
+
+}
+int Func_ESTADO_ABRIENDO(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_ABRIENDO; 
     
-    // Espera hasta que la condición de error se corrija
-    for(;;) {
-        if(io.lsc == LM_INACTIVO && io.lsa == LM_ACTIVO) {
-            return ESTADO_ABIERTA;
+
+}
+int Func_ESTADO_CERRANDO(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_CERRANDO; 
+
+
+}
+int Func_ESTADO_ABIERTO(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_ABIERTO; 
+
+    //inicializacion de estado.
+    io.ma = MOTOR_OFF;
+    io.mc = MOTOR_OFF;
+    io.lamp = LAMP_OFF;
+    config.cntTCA = 0;
+
+    //ciclo de estado
+    for(;;)
+    {
+         //si la puerta esta abierta basta con precionar el boton de cerrar en la llave y el pp para Cerrar el porton.       
+        if (config.cnt_TCA >= TIME_CA)
+        {
+            return ESTADO_CERRANDO;      
         }
-        if(io.lsc == LM_ACTIVO && io.lsa == LM_INACTIVO) {
-            return ESTADO_CERRADA;
-        }
-        if(io.lsc == LM_INACTIVO && io.lsa == LM_INACTIVO && io.ftc == FTC_INACTIVO) {
+
+        if (io.pp == PP_ACTIVO || io.keyc == KEY_ACTIVO)
+        {
             return ESTADO_CERRANDO;
         }
+        
     }
-}
 
-// Función que maneja el estado de apertura de la puerta
-int Func_ESTADO_ABRIENDO(void) {
+}
+int Func_ESTADO_CERRADO(void)
+{
+    //inicializacion de estado.
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
-    ESTADO_ACTUAL = ESTADO_ABRIENDO;
-    
-    // Activar motor de apertura
-    io.ma = MOTOR_ON;
+    ESTADO_ACTUAL = ESTADO_CERRADO; 
+    //inicializar el estado
+    io.ma = MOTOR_OFF;
     io.mc = MOTOR_OFF;
-    io.lamp = LAMP_ON;
+    io.lamp = LAMP_OFF;
     io.buzzer = BUZZER_OFF;
-    
-    // Esperar hasta que la puerta se abra o se presione el botón de paro
-    for(;;) {
-        if(io.pp == PP_ACTIVO) {
-            return ESTADO_DETENIDA;
-        }
-        if(io.lsa == LM_ACTIVO) {
-            return ESTADO_ABIERTA;
-        }
-    }
-}
 
-// Funciones adicionales para los otros estados seguirían el mismo esquema...
+    //ciclo de estado
+    for(;;)
+    {
+
+        //si la puerta esta cerrada basta con precionar el boton de abrir en la llave y el pp para Abrir el porton.
+        if(io.keya == KEY_ACTIVO || io.keya == KEY_ACTIVO)
+        {
+            return ESTADO_ABRIENDO;
+        }
+
+    }
+
+
+
+}
+int Func_ESTADO_DETENIDA(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_DETENIDA; 
+
+
+}
+int Func_ESTADO_DESCONOCIDO(void)
+{
+    //inicializacion de estado.
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_DESCONOCIDO; 
+
+}
