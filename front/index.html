@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Emulador NE555 - ESP32</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label, select, input {
+      display: block;
+      margin: 10px 0;
+    }
+    button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      font-weight: bold;
+    }
+    img {
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      margin: 20px auto;
+    }
+    .doc {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+  <script>
+    function actualizarImagen() {
+      const modo = document.getElementById('modo').value;
+      const img = document.getElementById('esquema');
+      if (modo === 'astable') {
+        img.src = '/astable.png';
+      } else {
+        img.src = '/monostable.png';
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Emulador NE555 con ESP32</h1>
+
+    <label for="modo">Tipo de circuito:</label>
+    <select id="modo" name="modo" onchange="actualizarImagen()">
+      <option value="astable">Astable</option>
+      <option value="monostable">Monostable</option>
+    </select>
+
+    <label for="resistencia1">Resistencia R1 (Ohms):</label>
+    <input type="number" id="resistencia1" name="resistencia1" required>
+
+    <label for="resistencia2">Resistencia R2 (Ohms):</label>
+    <input type="number" id="resistencia2" name="resistencia2">
+
+    <label for="capacitancia">Capacitor C:</label>
+    <input type="number" id="capacitancia" name="capacitancia" step="any" required>
+    <select id="unidadCapacitancia">
+      <option value="1e-6">µF</option>
+      <option value="1e-9">nF</option>
+      <option value="1e-12">pF</option>
+    </select>
+    
+    <img id="esquema" src="/astable.png" alt="Esquema del circuito">
+
+    <button onclick="enviarDatos('start')">Ejecutar</button>
+    <button onclick="enviarDatos('stop')">Detener</button>
+
+    <div class="doc">
+      <h3>Información del ESP32:</h3>
+      <p>Este sistema simula el comportamiento del temporizador NE555 usando un ESP32.</p>
+      <p>Se pueden seleccionar modos astable o monostable y calcular la frecuencia o duración del pulso según los valores ingresados.</p>
+    </div>
+  </div>
+
+  <script>
+    function enviarDatos(accion) {
+      const data = {
+        modo: document.getElementById("modo").value,
+        r1: parseInt(document.getElementById("resistencia1").value),
+        r2: parseInt(document.getElementById("resistencia2").value || 0),
+        c: parseInt(document.getElementById("capacitancia").value),
+        unidadCapacitancia: document.getElementById("unidadCapacitancia").value,
+        accion: accion
+      };
+
+      fetch("/api/v1/control", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.text())
+      .then(res => alert(res))
+      .catch(error => alert("Error al enviar datos"));
+    }
+  </script>
+</body>
+</html>
